@@ -1,0 +1,32 @@
+version: 2
+
+jobs:
+  build:
+    docker:
+      - image: circleci/node:9.2.0
+
+    environment:
+      TAG: latest
+      DOCKER_ORG: metagenscope
+
+    steps:
+      - checkout
+
+      - setup_remote_docker
+
+      - run:
+          name: Set COMMIT env var
+          command: echo 'export COMMIT=${CIRCLE_SHA1::8}' >> $BASH_ENV
+
+      - run:
+          name: Sign in to Docker Hub
+          command: docker login -u $DOCKER_ID -p $DOCKER_PASSWORD
+
+      - run:
+          name: Build and push metagenscope/detox
+          environment:
+            DETOX_IMAGE: detox
+          command: |
+            docker build . -t $DETOX_IMAGE:$COMMIT
+            docker tag $DETOX_IMAGE:$COMMIT $DOCKER_ORG/$DETOX_IMAGE:$TAG
+            docker push $DOCKER_ORG/$DETOX_IMAGE
